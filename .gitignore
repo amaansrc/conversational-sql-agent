@@ -15,9 +15,7 @@ __pycache__/
 backend/.env
 
 # Database files
-*.db
 *.sqlite3
-backend/AdventureWorksLT.db
 
 # Logs
 *.log
