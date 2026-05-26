@@ -3,6 +3,7 @@ from typing import Dict, List, Optional
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+from app.agents.explanation_agent.agent import ExplanationAgent
 from app.agents.memory.memory_service import MemoryService
 from app.agents.retry_agent.agent import RetryAgent
 from app.agents.sql_agent.agent import SQLAgent
@@ -23,6 +24,7 @@ clarifier_agent = ClarifierAgent()
 sql_agent = SQLAgent()
 validation_agent = ValidationAgent()
 retry_agent = RetryAgent()
+explanation_agent = ExplanationAgent()
 workflow = SQLWorkflow()
 
 
@@ -86,6 +88,20 @@ class RetryResponse(BaseModel):
     strategy: Optional[str] = None
     sql: Optional[str] = None
     error: Optional[str] = None
+
+
+class ExplainQueryResponse(BaseModel):
+    success: bool
+    route: str
+    reason: Optional[str] = None
+    clarification: Optional[str] = None
+    sql: Optional[str] = None
+    results: Optional[List[Dict[str, object]]] = None
+    query_explanation: Optional[str] = None
+    summary: Optional[str] = None
+    insights: Optional[List[str]] = None
+    error: Optional[str] = None
+    retry_strategy: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -218,4 +234,87 @@ def agent_retry(request: RetryRequest):
         strategy=result.get("strategy"),
         sql=result.get("sql"),
         error=result.get("error"),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Explained query pipeline
+# ---------------------------------------------------------------------------
+
+@app.post("/query/explain", response_model=ExplainQueryResponse)
+def explain_query(request: QueryRequest):
+    """
+    Full pipeline: NL query → SQL generation → execution → plain English explanation.
+
+    Steps:
+      1. ClarifierAgent   — returns a question if the query is ambiguous
+      2. SupervisorAgent  — decides route (schema / memory)
+      3. SQLWorkflow      — generates, validates, retries, and executes the SQL
+      4. ExplanationAgent — explains the results as query_explanation, summary, insights
+    """
+    # Step 1 — Clarify
+    clarification = clarifier_agent.analyze(request.query)
+    if clarification.needs_clarification:
+        return ExplainQueryResponse(
+            success=False,
+            route=RouteType.CLARIFY.value,
+            reason="Ambiguous intent detected",
+            clarification=clarification.question,
+        )
+
+    # Step 2 — Route
+    decision = supervisor_agent.route(request.query)
+    query_input = request.query
+    if decision.route == RouteType.MEMORY:
+        context = memory_service.get_context()
+        if context.last_query:
+            query_input = (
+                f"Previous query: {context.last_query}. "
+                f"Use it as context for: {request.query}"
+            )
+
+    # Step 3 — Generate SQL → Execute
+    result = workflow.process_query(query_input)
+
+    if not result["success"]:
+        return ExplainQueryResponse(
+            success=False,
+            route=decision.route.value,
+            reason=decision.reason,
+            sql=result.get("sql"),
+            error=result.get("error"),
+            retry_strategy=result.get("retry_strategy"),
+        )
+
+    memory_service.update(request.query)
+
+    # Step 4 — Explain results in plain English
+    try:
+        explanation = explanation_agent.explain(
+            user_query=request.query,
+            sql=result["sql"],
+            results=result["results"],
+        )
+    except Exception as e:
+        # SQL + results are still returned even if explanation fails
+        return ExplainQueryResponse(
+            success=True,
+            route=decision.route.value,
+            reason=decision.reason,
+            sql=result["sql"],
+            results=result["results"],
+            retry_strategy=result.get("retry_strategy"),
+            error=f"Explanation failed: {str(e)}",
+        )
+
+    return ExplainQueryResponse(
+        success=True,
+        route=decision.route.value,
+        reason=decision.reason,
+        sql=result["sql"],
+        results=result["results"],
+        query_explanation=explanation.get("query_explanation"),
+        summary=explanation.get("summary"),
+        insights=explanation.get("insights"),
+        retry_strategy=result.get("retry_strategy"),
     )

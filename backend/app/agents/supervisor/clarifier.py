@@ -98,12 +98,15 @@ class ClarifierAgent:
 
     def _contains_metric(self, query: str) -> bool:
         metrics = {
-            "sales",
-            "revenue",
-            "profit",
-            "quantity",
-            "orders",
-            "total"
+            # aggregate / business metrics
+            "sales", "revenue", "profit", "quantity", "orders", "total",
+            # price / cost columns
+            "price", "list price", "listprice", "cost", "discount",
+            "unitprice", "unit price", "subtotal", "linetotal",
+            # count / size terms
+            "count", "number", "amount", "sum", "average", "avg",
+            # adjectives that already imply a metric
+            "expensive", "cheapest", "largest", "smallest",
         }
         return any(word in query for word in metrics)
 
