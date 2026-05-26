@@ -1,0 +1,29 @@
+# Python environment
+.venv/
+
+# VS Code
+.vscode/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment files
+*.env
+.env
+backend/.env
+
+# Database files
+*.db
+*.sqlite3
+backend/AdventureWorksLT.db
+
+# Logs
+*.log
+
+# MacOS
+.DS_Store
+
+# Ignore Tanish's work folder
+Tanish's work/
