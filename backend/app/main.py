@@ -18,6 +18,15 @@ app = FastAPI(
     description="Merged Amaan and Tanish backend workflow for conversational SQL generation and execution.",
 )
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 memory_service = MemoryService()
 supervisor_agent = SupervisorAgent()
 clarifier_agent = ClarifierAgent()
