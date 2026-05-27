@@ -1,8 +1,13 @@
-# Conversational SQL Agent Backend
+# Conversational SQL Agent
 
-This backend merges Amaan's supervisor/schema/memory work with Tanish's SQL workflow, validation, retry, and execution pipeline.
+This project is a full-stack application that merges Amaan's supervisor/schema/memory work with Tanish's SQL workflow, validation, retry, and execution pipeline. It provides a conversational interface to query SQL databases using natural language.
 
-## What is included
+## Project Structure
+
+- `backend/`: FastAPI backend containing the supervisor routing, memory service, SQL generation, validation, and execution pipeline.
+- `frontend/`: React frontend built with Vite, providing the conversational UI.
+
+## What is included (Backend)
 
 - FastAPI backend entrypoint at `backend/app/main.py`
 - Supervisor routing and clarification logic
@@ -13,40 +18,66 @@ This backend merges Amaan's supervisor/schema/memory work with Tanish's SQL work
 - Query execution with SQLAlchemy
 - Centralized config using `.env`
 
-## Setup
+## What is included (Frontend)
 
-1. Create a virtual environment and install dependencies:
+- React built with Vite for fast development
+- Interactive conversational interface
+- Monaco editor integration for SQL query visualization
+- Lucide React for iconography
+
+## Prerequisites
+
+- Node.js (for frontend)
+- Python 3.8+ (for backend)
+- Git
+
+## Setup & Running Locally
+
+### 1. Backend Setup
+
+First, navigate to the backend directory, create a virtual environment, and install the dependencies:
 
 ```bash
-cd "Capstone Project 2/backend"
+cd backend
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-2. Copy the sample environment file:
+Copy the sample environment file:
 
 ```bash
 cp .env.example .env
 ```
 
-3. Update `.env` with your API key and DB settings.
+Update `.env` with your API key and DB settings.
 
-## Running the backend
-
-Start the server with Uvicorn:
+Start the backend server with Uvicorn:
 
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Then access the health check:
+The backend API will be available at `http://127.0.0.1:8000`. You can access the health check at `http://127.0.0.1:8000/health`.
+
+### 2. Frontend Setup
+
+In a new terminal window, navigate to the frontend directory and install dependencies:
 
 ```bash
-curl http://127.0.0.1:8000/health
+cd frontend
+npm install
 ```
 
-## Query API
+Start the frontend development server:
+
+```bash
+npm start
+```
+
+The frontend will run on the port provided by Vite (usually `http://localhost:5173`). Open this URL in your browser to interact with the application.
+
+## Query API (Backend)
 
 Send requests to `POST /query` with JSON payload:
 
@@ -60,10 +91,11 @@ Send requests to `POST /query` with JSON payload:
 
 - The default database is `AdventureWorksLT.db`.
 - LLM provider defaults to `openai`.
-- Use `LLM_PROVIDER=groq` in `.env` if you want Groq instead.
+- Use `LLM_PROVIDER=groq` in the backend `.env` if you want Groq instead.
 
 ## Files of interest
 
+### Backend
 - `app/main.py` — FastAPI endpoints
 - `app/services/sql_workflow.py` — end-to-end query pipeline
 - `app/agents/sql_agent/agent.py` — SQL generation logic
@@ -71,3 +103,7 @@ Send requests to `POST /query` with JSON payload:
 - `app/agents/retry_agent/agent.py` — retry strategies
 - `app/agents/memory/memory_service.py` — conversation memory
 - `app/config/settings.py` — environment configuration
+
+### Frontend
+- `src/` — React source code components and application logic
+- `vite.config.js` — Vite configuration for the development server
