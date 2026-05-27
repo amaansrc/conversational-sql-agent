@@ -1,6 +1,6 @@
 # Conversational SQL Agent
 
-This project is a full-stack application that merges Amaan's supervisor/schema/memory work with Tanish's SQL workflow, validation, retry, and execution pipeline. It provides a conversational interface to query SQL databases using natural language.
+This project is a full-stack application that implements a supervisor/schema/memory system alongside a SQL workflow, validation, retry, and execution pipeline. It provides a conversational interface to query SQL databases using natural language.
 
 ## Project Structure
 

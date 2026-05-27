@@ -15,7 +15,7 @@ from app.services.sql_workflow import SQLWorkflow
 
 app = FastAPI(
     title="Conversational SQL Agent",
-    description="Merged Amaan and Tanish backend workflow for conversational SQL generation and execution.",
+    description="Backend workflow for conversational SQL generation and execution.",
 )
 
 from fastapi.middleware.cors import CORSMiddleware
