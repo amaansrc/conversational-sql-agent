@@ -327,6 +327,7 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pendingClarification, setPendingClarification] = useState(null);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -334,20 +335,27 @@ export default function App() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const sendQuery = useCallback(async (query) => {
+  const sendQuery = useCallback(async (query, originalQuery = null) => {
     if (!query.trim() || loading) return;
     setInput("");
     setLoading(true);
 
-    const userMsg = { id: Date.now(), role: "user", text: query };
+    const actualQuery = originalQuery ? `${originalQuery} ${query}` : query;
+    const userMsg = { id: Date.now(), role: "user", text: actualQuery };
     const loadingMsg = { id: Date.now() + 1, role: "assistant", loading: true };
     setMessages((prev) => [...prev, userMsg, loadingMsg]);
 
     try {
-      const data = await postQuery(query);
+      const data = await postQuery(actualQuery);
       setMessages((prev) =>
         prev.map((m) => (m.id === loadingMsg.id ? { ...m, loading: false, data } : m))
       );
+
+      if (data.route === "clarify") {
+        setPendingClarification(actualQuery);
+      } else {
+        setPendingClarification(null);
+      }
     } catch (err) {
       setMessages((prev) =>
         prev.map((m) =>
@@ -364,6 +372,7 @@ export default function App() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setPendingClarification(null);
     sendQuery(input);
   };
 
@@ -410,7 +419,7 @@ export default function App() {
                 <AssistantMessage
                   key={msg.id}
                   msg={msg}
-                  onClarify={(answer) => sendQuery(answer)}
+                  onClarify={(answer) => sendQuery(answer, pendingClarification)}
                 />
               )
             )}

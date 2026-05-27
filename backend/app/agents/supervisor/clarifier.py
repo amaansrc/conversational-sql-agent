@@ -74,11 +74,12 @@ class ClarifierAgent:
             
         # 4. Pronoun follow-up ambiguity
         if any(word in q.split() for word in self.pronouns):
-            return ClarificationResult(
-                needs_clarification=True,
-                ambiguity_type="pronoun_reference",
-                question="Can you clarify what 'those' refers to?"
-            )
+            if not self._contains_explicit_reference(q):
+                return ClarificationResult(
+                    needs_clarification=True,
+                    ambiguity_type="pronoun_reference",
+                    question="Can you clarify what 'those' refers to?"
+                )
 
         # 5. Partial filter ambiguity
         if any(word in q.split() for word in self.partial_filters):
@@ -121,6 +122,39 @@ class ClarifierAgent:
             "yearly"
         }
         return any(word in query for word in times)
+
+    def _contains_explicit_reference(self, query: str) -> bool:
+        explicit_references = {
+            "customer",
+            "customers",
+            "product",
+            "products",
+            "order",
+            "orders",
+            "region",
+            "regions",
+            "country",
+            "countries",
+            "category",
+            "categories",
+            "employee",
+            "employees",
+            "supplier",
+            "suppliers",
+            "vendor",
+            "vendors",
+            "item",
+            "items",
+            "sale",
+            "sales"
+        }
+
+        for pronoun in self.pronouns:
+            match = re.search(rf"\b{pronoun}\s+(\w+)", query)
+            if match and match.group(1) in explicit_references:
+                return True
+
+        return False
 
     def _contains_grouping(self, query: str) -> bool:
         groups = {
