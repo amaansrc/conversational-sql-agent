@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import Editor from "@monaco-editor/react";
+import { NeatGradient } from "@firecms/neat";
 import {
   Send,
   Database,
@@ -150,20 +151,20 @@ function ResultsTable({ results }) {
 
   const filtered = filter
     ? results.filter((row) =>
-        columns.some((col) =>
-          String(row[col]).toLowerCase().includes(filter.toLowerCase())
-        )
+      columns.some((col) =>
+        String(row[col]).toLowerCase().includes(filter.toLowerCase())
       )
+    )
     : results;
 
   const sorted = sortKey
     ? [...filtered].sort((a, b) => {
-        const va = a[sortKey], vb = b[sortKey];
-        if (va == null) return 1;
-        if (vb == null) return -1;
-        const cmp = typeof va === "number" ? va - vb : String(va).localeCompare(String(vb));
-        return sortDir === "asc" ? cmp : -cmp;
-      })
+      const va = a[sortKey], vb = b[sortKey];
+      if (va == null) return 1;
+      if (vb == null) return -1;
+      const cmp = typeof va === "number" ? va - vb : String(va).localeCompare(String(vb));
+      return sortDir === "asc" ? cmp : -cmp;
+    })
     : filtered;
 
   const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
@@ -405,10 +406,131 @@ function Navbar({ currentRoute }) {
   );
 }
 
+// ─── Neat Gradient Background ─────────────────────────────────────────────────
+const NEAT_CONFIG = {
+  colors: [
+    {
+      color: '#FF6D29',
+      enabled: true,
+    },
+    {
+      color: '#E85002',
+      enabled: true,
+    },
+    {
+      color: '#D9C3AB',
+      enabled: true,
+    },
+    {
+      color: '#<n>453027</n>',
+      enabled: true,
+    },
+    {
+      color: '#<n>161316</n>',
+      enabled: true,
+    },
+  ],
+  speed: 2,
+  horizontalPressure: 8,
+  verticalPressure: 8,
+  waveFrequencyX: 1,
+  waveFrequencyY: 2,
+  waveAmplitude: 5,
+  shadows: 10,
+  highlights: 2,
+  colorBrightness: 0.9,
+  colorSaturation: -1,
+  wireframe: false,
+  colorBlending: 10,
+  backgroundColor: '#<n>000000</n>',
+  backgroundAlpha: 1,
+  grainScale: 4,
+  grainSparsity: 0,
+  grainIntensity: 0.175,
+  grainSpeed: 0.7,
+  resolution: 1,
+  yOffset: 2257,
+  yOffsetWaveMultiplier: 6.2,
+  yOffsetColorMultiplier: 5.8,
+  yOffsetFlowMultiplier: 6.5,
+  flowDistortionA: 1.1,
+  flowDistortionB: 0.8,
+  flowScale: 1.6,
+  flowEase: 0.32,
+  flowEnabled: true,
+  enableProceduralTexture: false,
+  textureVoidLikelihood: 0.27,
+  textureVoidWidthMin: 60,
+  textureVoidWidthMax: 420,
+  textureBandDensity: 1.2,
+  textureColorBlending: 0.06,
+  textureSeed: 333,
+  textureEase: 0.22,
+  proceduralBackgroundColor: '#0E0707',
+  textureShapeTriangles: 20,
+  textureShapeCircles: 15,
+  textureShapeBars: 15,
+  textureShapeSquiggles: 10,
+  domainWarpEnabled: false,
+  domainWarpIntensity: 0,
+  domainWarpScale: 3,
+  vignetteIntensity: 1,
+  vignetteRadius: 0.6,
+  fresnelEnabled: false,
+  fresnelPower: 2,
+  fresnelIntensity: 0.5,
+  fresnelColor: '#FFFFFF',
+  iridescenceEnabled: false,
+  iridescenceIntensity: 0.5,
+  iridescenceSpeed: 1,
+  bloomIntensity: 0,
+  bloomThreshold: 0.7,
+  chromaticAberration: 0,
+};
+
+function NeatBackground() {
+  const canvasRef = useRef(null);
+  const gradientRef = useRef(null);
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+
+    gradientRef.current = new NeatGradient({
+      ref: canvasRef.current,
+      ...NEAT_CONFIG,
+    });
+
+    const handleScroll = () => {
+      if (gradientRef.current) {
+        gradientRef.current.yOffset = window.scrollY;
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (gradientRef.current) {
+        gradientRef.current.destroy();
+        gradientRef.current = null;
+      }
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      id="neat-gradient"
+      className="neat-gradient-canvas"
+    />
+  );
+}
+
 // ─── Homepage ─────────────────────────────────────────────────────────────────
 function HomePage() {
   return (
     <div className="homepage" id="homepage">
+      <NeatBackground />
+
       <section className="hero" id="hero-section">
         <div className="hero-badge">
           <span className="hero-badge-dot" />
@@ -421,7 +543,7 @@ function HomePage() {
         </h1>
 
         <p className="hero-subtitle">
-          Ask questions about your database in plain English. Our AI agent generates SQL, 
+          Ask questions about your database in plain English. Our AI agent generates SQL,
           executes queries, and delivers insights — all through a simple conversation.
         </p>
 
@@ -442,7 +564,7 @@ function HomePage() {
           <span className="features-label">Features</span>
           <h2 className="features-title">Everything you need to query smarter</h2>
           <p className="features-desc">
-            From natural language understanding to intelligent error recovery — 
+            From natural language understanding to intelligent error recovery —
             built for effortless database exploration.
           </p>
         </div>
@@ -595,18 +717,19 @@ function ChatPage() {
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
   const route = useHashRoute();
+  const isChat = route === "#/chat";
 
   return (
     <>
-      {/* Background layers */}
-      <div className="gradient-bg" />
+      {/* Background layers — CSS gradient only on chat page */}
+      {isChat && <div className="gradient-bg" />}
       <div className="noise-overlay" />
 
       {/* Navigation */}
       <Navbar currentRoute={route} />
 
       {/* Page content */}
-      {route === "#/chat" ? <ChatPage /> : <HomePage />}
+      {isChat ? <ChatPage /> : <HomePage />}
     </>
   );
 }

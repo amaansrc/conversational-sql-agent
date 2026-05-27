@@ -24,6 +24,7 @@ This project is a full-stack application that implements a supervisor/schema/mem
 - Interactive conversational interface
 - Monaco editor integration for SQL query visualization
 - Lucide React for iconography
+- Dynamic 3D interactive background using `@firecms/neat` (handled via standard `npm install`)
 
 ## Prerequisites
 
@@ -75,7 +76,7 @@ Start the frontend development server:
 npm start
 ```
 
-The frontend will run on the port provided by Vite (usually `http://localhost:5173`). Open this URL in your browser to interact with the application.
+The frontend will run on the port provided by Vite. Open the URL in your browser to interact with the application.
 
 ## Query API (Backend)
 
