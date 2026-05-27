@@ -17,6 +17,11 @@ import {
   BarChart2,
   Info,
   X,
+  ArrowRight,
+  Sparkles,
+  Brain,
+  RotateCcw,
+  LineChart,
 } from "lucide-react";
 import "./App.css";
 
@@ -31,6 +36,21 @@ async function postQuery(query, endpoint = "/query/explain") {
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
   return res.json();
+}
+
+// ─── Hash Router ──────────────────────────────────────────────────────────────
+function useHashRoute() {
+  const [route, setRoute] = useState(window.location.hash || "#/");
+  useEffect(() => {
+    const handler = () => setRoute(window.location.hash || "#/");
+    window.addEventListener("hashchange", handler);
+    return () => window.removeEventListener("hashchange", handler);
+  }, []);
+  return route;
+}
+
+function navigate(hash) {
+  window.location.hash = hash;
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -317,13 +337,138 @@ function AssistantMessage({ msg, onClarify }) {
 // ─── Suggested prompts ────────────────────────────────────────────────────────
 const SUGGESTIONS = [
   "Show top 5 products by list price",
-  "How many customers are in each region?",
-  "List all orders placed in the last year",
-  "Which products have the highest discount?",
+  "Top 10 customers by total sales",
+  "List of orders placed in year 2008",
+  "Customers with first letter 't' in their last name",
+  "All details of the orders placed",
 ];
 
-// ─── Main App ─────────────────────────────────────────────────────────────────
-export default function App() {
+// ─── Feature cards data ───────────────────────────────────────────────────────
+const FEATURES = [
+  {
+    icon: <MessageSquare size={24} />,
+    iconClass: "icon-nlp",
+    title: "Natural Language Queries",
+    desc: "Ask questions about your database in plain English — no SQL knowledge required. The agent understands context and intent.",
+  },
+  {
+    icon: <Brain size={24} />,
+    iconClass: "icon-sql",
+    title: "Intelligent SQL Generation",
+    desc: "AI-powered query generation that understands your schema. Produces optimized, production-ready SQL automatically.",
+  },
+  {
+    icon: <RotateCcw size={24} />,
+    iconClass: "icon-retry",
+    title: "Smart Retry Logic",
+    desc: "Failed queries are automatically analyzed and corrected. Multiple retry strategies ensure you always get results.",
+  },
+  {
+    icon: <LineChart size={24} />,
+    iconClass: "icon-insights",
+    title: "Instant Insights",
+    desc: "Get rich summaries, key takeaways, and actionable insights alongside your query results — not just raw data.",
+  },
+];
+
+// ─── Navbar ───────────────────────────────────────────────────────────────────
+function Navbar({ currentRoute }) {
+  const isHome = currentRoute === "#/" || currentRoute === "";
+  const isChat = currentRoute === "#/chat";
+
+  return (
+    <nav className="navbar" id="main-nav">
+      <div className="nav-brand" onClick={() => navigate("#/")}>
+        <div className="nav-logo">
+          <Database size={16} />
+        </div>
+        <span className="nav-title">SQL Agent</span>
+      </div>
+      <div className="nav-links">
+        <button
+          className={`nav-link ${isHome ? "active" : ""}`}
+          onClick={() => navigate("#/")}
+        >
+          Home
+        </button>
+        <button
+          className={`nav-link ${isChat ? "active" : ""}`}
+          onClick={() => navigate("#/chat")}
+        >
+          Chatbot
+        </button>
+      </div>
+      <button className="nav-cta" onClick={() => navigate("#/chat")}>
+        <span>Start Chatting</span>
+      </button>
+    </nav>
+  );
+}
+
+// ─── Homepage ─────────────────────────────────────────────────────────────────
+function HomePage() {
+  return (
+    <div className="homepage" id="homepage">
+      <section className="hero" id="hero-section">
+        <div className="hero-badge">
+          <span className="hero-badge-dot" />
+          Powered by AI · AdventureWorksLT Database
+        </div>
+
+        <h1 className="hero-title">
+          Talk to Your<br />
+          <span className="accent-text">Data.</span>
+        </h1>
+
+        <p className="hero-subtitle">
+          Ask questions about your database in plain English. Our AI agent generates SQL, 
+          executes queries, and delivers insights — all through a simple conversation.
+        </p>
+
+        <div className="hero-actions">
+          <button className="btn-primary" onClick={() => navigate("#/chat")}>
+            Start Chatting <ArrowRight size={18} />
+          </button>
+          <button className="btn-secondary" onClick={() => {
+            document.getElementById("features-section")?.scrollIntoView({ behavior: "smooth" });
+          }}>
+            <Sparkles size={16} /> Explore Features
+          </button>
+        </div>
+      </section>
+
+      <section className="features-section" id="features-section">
+        <div className="features-header">
+          <span className="features-label">Features</span>
+          <h2 className="features-title">Everything you need to query smarter</h2>
+          <p className="features-desc">
+            From natural language understanding to intelligent error recovery — 
+            built for effortless database exploration.
+          </p>
+        </div>
+
+        <div className="features-grid" id="features-grid">
+          {FEATURES.map((f, i) => (
+            <div className="feature-card" key={i} id={`feature-card-${i}`}>
+              <div className={`feature-icon ${f.iconClass}`}>
+                {f.icon}
+              </div>
+              <h3 className="feature-card-title">{f.title}</h3>
+              <p className="feature-card-desc">{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <footer className="homepage-footer">
+        Conversational SQL Agent · Capstone Project
+      </footer>
+    </div>
+  );
+}
+
+// ─── Chat Page ────────────────────────────────────────────────────────────────
+function ChatPage() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -379,56 +524,46 @@ export default function App() {
   const isEmpty = messages.length === 0;
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <div className="header-left">
-          <Database size={18} className="header-icon" />
-          <span className="header-title">SQL Agent</span>
-          <span className="header-sub">AdventureWorksLT</span>
-        </div>
-        <div className="header-right">
-          <MessageSquare size={15} />
-          <span>Conversational</span>
-        </div>
-      </header>
-
+    <div className="chatbot-page" id="chatbot-page">
       <main className="chat-area">
-        {isEmpty ? (
-          <div className="empty-state">
-            <div className="empty-icon-wrap">
-              <Database size={36} />
+        <div className="chat-container">
+          {isEmpty ? (
+            <div className="empty-state" id="chat-empty-state">
+              <div className="empty-icon-wrap">
+                <Database size={36} />
+              </div>
+              <h2>Ask anything about your database</h2>
+              <p>Query the AdventureWorksLT database in plain English. The agent will generate SQL, run it, and explain the results.</p>
+              <div className="suggestions">
+                {SUGGESTIONS.map((s) => (
+                  <button key={s} className="suggestion-chip" onClick={() => sendQuery(s)}>
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
-            <h2>Ask anything about your database</h2>
-            <p>Query the AdventureWorksLT database in plain English. The agent will generate SQL, run it, and explain the results.</p>
-            <div className="suggestions">
-              {SUGGESTIONS.map((s) => (
-                <button key={s} className="suggestion-chip" onClick={() => sendQuery(s)}>
-                  {s}
-                </button>
-              ))}
+          ) : (
+            <div className="messages">
+              {messages.map((msg) =>
+                msg.role === "user" ? (
+                  <div key={msg.id} className="chat-bubble user">
+                    {msg.text}
+                  </div>
+                ) : (
+                  <AssistantMessage
+                    key={msg.id}
+                    msg={msg}
+                    onClarify={(answer) => sendQuery(answer, pendingClarification)}
+                  />
+                )
+              )}
+              <div ref={bottomRef} />
             </div>
-          </div>
-        ) : (
-          <div className="messages">
-            {messages.map((msg) =>
-              msg.role === "user" ? (
-                <div key={msg.id} className="chat-bubble user">
-                  {msg.text}
-                </div>
-              ) : (
-                <AssistantMessage
-                  key={msg.id}
-                  msg={msg}
-                  onClarify={(answer) => sendQuery(answer, pendingClarification)}
-                />
-              )
-            )}
-            <div ref={bottomRef} />
-          </div>
-        )}
+          )}
+        </div>
       </main>
 
-      <footer className="input-bar">
+      <footer className="input-bar" id="chat-input-bar">
         <form onSubmit={handleSubmit} className="input-form">
           <input
             ref={inputRef}
@@ -438,11 +573,13 @@ export default function App() {
             placeholder="Ask about your database…"
             disabled={loading}
             autoFocus
+            id="chat-input"
           />
           <button
             type="submit"
             className="send-btn"
             disabled={!input.trim() || loading}
+            id="send-button"
           >
             {loading ? <Loader size={16} className="spin" /> : <Send size={16} />}
           </button>
@@ -452,5 +589,24 @@ export default function App() {
         </p>
       </footer>
     </div>
+  );
+}
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
+export default function App() {
+  const route = useHashRoute();
+
+  return (
+    <>
+      {/* Background layers */}
+      <div className="gradient-bg" />
+      <div className="noise-overlay" />
+
+      {/* Navigation */}
+      <Navbar currentRoute={route} />
+
+      {/* Page content */}
+      {route === "#/chat" ? <ChatPage /> : <HomePage />}
+    </>
   );
 }
