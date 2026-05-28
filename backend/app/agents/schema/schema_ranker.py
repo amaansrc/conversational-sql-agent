@@ -10,7 +10,10 @@ class SchemaRanker:
         "passwordsalt"
     }
 
-    KEYWORD_MAP = {
+    # Keywords map to the base table names (without schema prefix).
+    # Matching is done against the last part of qualified names
+    # e.g. "SalesLT.Customer" matches "Customer".
+    KEYWORD_TABLE_MAP = {
         "customer": ["Customer"],
         "sales": ["SalesOrderHeader", "SalesOrderDetail"],
         "order": ["SalesOrderHeader", "SalesOrderDetail"],
@@ -32,6 +35,11 @@ class SchemaRanker:
         "customerid"
     }
 
+    @staticmethod
+    def _base_name(qualified_name: str) -> str:
+        """Extract the base table name from a schema-qualified name."""
+        return qualified_name.rsplit(".", 1)[-1]
+
     def rank(
         self,
         query: str,
@@ -44,13 +52,14 @@ class SchemaRanker:
         for table in schema.tables:
             table_score = 0
             selected_columns = []
+            base_name = self._base_name(table.table_name)
 
             # ---- Table scoring ----
-            for keyword, mapped_tables in self.KEYWORD_MAP.items():
-                if keyword in query and table.table_name in mapped_tables:
+            for keyword, mapped_tables in self.KEYWORD_TABLE_MAP.items():
+                if keyword in query and base_name in mapped_tables:
                     table_score += 3
 
-            if table.table_name.lower() in query:
+            if base_name.lower() in query:
                 table_score += 2
 
             # ---- Column scoring ----
@@ -75,6 +84,7 @@ class SchemaRanker:
                     selected_columns.append(col)
 
             if table_score > 0 and selected_columns:
+                # Use the full qualified name (e.g. SalesLT.Customer)
                 ranked_schema[table.table_name] = selected_columns
 
         return ranked_schema

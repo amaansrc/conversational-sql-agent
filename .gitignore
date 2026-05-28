@@ -13,6 +13,7 @@ __pycache__/
 *.env
 .env
 backend/.env
+frontend/.env
 
 # Database files
 *.sqlite3

@@ -101,48 +101,21 @@ STRICT RULES:
 1. Return ONLY executable SQL
 2. Return NO explanations
 3. Return NO markdown
-4. Use SQLite syntax only
+4. Use T-SQL (SQL Server) syntax only
 5. Use ONLY tables and columns present in schema
 6. Follow user intent exactly
 7. Never ignore important words
 8. Generate executable SQL only
+9. Do NOT wrap column or table names in square brackets unless they contain spaces or are reserved words
+10. Use TOP N instead of LIMIT N
+11. ALWAYS use schema-qualified table names with the dot OUTSIDE brackets. Correct: [SalesLT].[Customer]. WRONG: [SalesLT.Customer]. Each identifier part must be bracketed separately.
 
 Intent Rules:
 
-- highest
-- top
-- maximum
-→ use ORDER BY DESC
-
-- lowest
-- minimum
-→ use ORDER BY ASC
-
-- price
-- pricing
-- cost
-- value
-→ prioritize ListPrice
-
-- top N
-→ use LIMIT N
-
-Recommended columns:
-
-For Product:
-ProductID
-Name
-ListPrice
-
-For Customer:
-CustomerID
-FirstName
-LastName
-
-For Sales:
-SalesOrderID
-CustomerID
-TotalDue
+- highest / top / maximum → use ORDER BY DESC
+- lowest / minimum → use ORDER BY ASC
+- price / pricing / cost / value → prioritize ListPrice
+- top N → use SELECT TOP N
 
 Examples:
 
@@ -150,21 +123,26 @@ Question:
 Show top 5 products by list price
 
 SQL:
-SELECT ProductID, Name, ListPrice
-FROM Product
+SELECT TOP 5 ProductID, Name, ListPrice
+FROM [SalesLT].[Product]
 ORDER BY ListPrice DESC
-LIMIT 5
-
 
 Question:
 Find customers
 
 SQL:
-SELECT CustomerID,
-FirstName,
-LastName
-FROM Customer
+SELECT CustomerID, FirstName, LastName
+FROM [SalesLT].[Customer]
 
+Question:
+Top 5 customers by total sales
+
+SQL:
+SELECT TOP 5 C.CustomerID, C.FirstName, C.LastName, SUM(SOH.TotalDue) AS TotalSales
+FROM [SalesLT].[Customer] C
+INNER JOIN [SalesLT].[SalesOrderHeader] SOH ON C.CustomerID = SOH.CustomerID
+GROUP BY C.CustomerID, C.FirstName, C.LastName
+ORDER BY TotalSales DESC
 
 Question:
 {user_query}
